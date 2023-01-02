@@ -23,6 +23,8 @@ return false;
 }
 10 == 10;
 10 != 9;
+let ∆ = 9;
+let śńięg = 9;
 
 `
 	tests := []struct {
@@ -100,6 +102,16 @@ return false;
 		{token.SEMICOLON, ";"},
 		{token.INT, "10"},
 		{token.NOT_EQ, "!="},
+		{token.INT, "9"},
+		{token.SEMICOLON, ";"},
+		{token.LET, "let"},
+		{token.IDENT, "∆"},
+		{token.ASSIGN, "="},
+		{token.INT, "9"},
+		{token.SEMICOLON, ";"},
+		{token.LET, "let"},
+		{token.IDENT, "śńięg"},
+		{token.ASSIGN, "="},
 		{token.INT, "9"},
 		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
