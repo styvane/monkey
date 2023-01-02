@@ -19,6 +19,7 @@ type Lexer struct {
 func New(input string) *Lexer {
 	l := &Lexer{input: []rune(input)}
 	l.readChar()
+	l.lineNumber += 1
 	return l
 }
 
@@ -42,16 +43,14 @@ func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 	var tokType token.TokenType
 	var literal string
-	var lineno, position int
-
 	l.skipWhitespace()
+	position := l.position
+	lineno := l.lineNumber
 
 	switch l.ch {
 	case '=':
 		if l.peekChar() == '=' {
 			ch := l.ch
-			position = l.position
-			lineno = l.lineNumber
 			l.readChar()
 			literal = string(ch) + string(l.ch)
 			tokType = token.EQ
@@ -79,8 +78,6 @@ func (l *Lexer) NextToken() token.Token {
 	case '!':
 		if l.peekChar() == '=' {
 			ch := l.ch
-			position = l.position
-			lineno = l.lineNumber
 			l.readChar()
 			literal = string(ch) + string(l.ch)
 			tokType = token.NOT_EQ
@@ -101,8 +98,6 @@ func (l *Lexer) NextToken() token.Token {
 		tok.Type = token.EOF
 	default:
 		if isLetter(l.ch) {
-			position = l.position
-			lineno = l.lineNumber
 			tok.Literal = l.readIdentifier()
 			tok.Type = token.LookupIdent(tok.Literal)
 			tok.Span = token.NewSpan(lineno, position)
@@ -122,7 +117,7 @@ func (l *Lexer) NextToken() token.Token {
 	if literal != "" {
 		tok = token.Token{Type: tokType, Literal: literal, Span: token.NewSpan(lineno, position)}
 	} else if tok.Type == "" {
-		tok = token.NewToken(tokType, l.ch, token.NewSpan(lineno, position))
+		tok = token.NewToken(tokType, l.ch, token.NewSpan(l.lineNumber, position))
 	}
 	l.readChar()
 	return tok

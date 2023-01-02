@@ -62,13 +62,13 @@ type Token struct {
 type Span struct {
 	// Lineno is the line number in the input.
 	Lineno int
-	// Position is the postion in the input.
-	Position int
+	// ColumnPos is the postion in the input.
+	ColumnPos int
 }
 
 // NewSpan creates a new span with the line number and position.
 func NewSpan(lineno, position int) Span {
-	return Span{Lineno: lineno, Position: position}
+	return Span{Lineno: lineno, ColumnPos: position}
 }
 
 // TokenType represents the type of a token.
