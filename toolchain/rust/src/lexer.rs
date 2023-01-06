@@ -38,7 +38,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Eats the whitespace from input.
-    pub fn eat_whitespace(&mut self) {
+    fn eat_whitespace(&mut self) {
         while self.lookahead(|x| x.is_whitespace()).is_some() {}
     }
 
@@ -56,7 +56,7 @@ impl<'a> Lexer<'a> {
             }
         };
 
-        if Self::is_identifier(&literal) {
+        if is_identifier(&literal) {
             let mut ident = String::from(literal);
             if let Some(value) = self.parse_identifier() {
                 if write!(&mut ident, "{}", value).is_err() {
@@ -109,18 +109,13 @@ impl<'a> Lexer<'a> {
     /// Returns the identitifer.
     fn parse_identifier(&mut self) -> Option<String> {
         let mut ident = String::new();
-        while let Some(ch) = self.lookahead(Self::is_identifier) {
+        while let Some(ch) = self.lookahead(is_identifier) {
             if write!(&mut ident, "{}", ch).is_err() {
                 return None;
             }
         }
 
         Some(ident)
-    }
-
-    /// Returns true if the character is a letter or underscore.
-    fn is_identifier(c: &char) -> bool {
-        c.is_alphabetic() || *c == '_'
     }
 
     /// Inspect next element.
@@ -139,6 +134,11 @@ impl<'a> Lexer<'a> {
         }
         Some(digits)
     }
+}
+
+/// Returns true if the character is a letter or underscore.
+fn is_identifier(c: &char) -> bool {
+    c.is_alphabetic() || *c == '_'
 }
 
 #[cfg(test)]
