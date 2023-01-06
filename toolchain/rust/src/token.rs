@@ -35,62 +35,61 @@ impl Value {
     }
 }
 
-#[allow(non_camel_case_types)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 /// The kind of token.
 pub enum TokenKind {
     /// This is the end of file.
-    EOF,
+    Eof,
     /// This is an identifier; for example add, foobar, x, y, ...
-    IDENT,
+    Ident,
     /// This is an integer.
-    INT,
+    Int,
     /// This is a assignment operator.
-    ASSIGN,
+    Assign,
     /// This a plus (+) operator.
-    PLUS,
+    Plus,
     /// This is minus (-) operator
-    MINUS,
+    Minus,
     /// This is a not (!) operator.
-    NOT,
+    Not,
     /// This is divide (/) operator.
-    DIVIDE,
+    Divide,
     /// This is a multiply operator.
-    MULTIPLY,
+    Multiply,
     /// This is an equal operator.
-    EQ,
+    Eq,
     /// This is a not equal operator.
-    NOT_EQ,
+    NotEq,
     /// This is a greater than operator.
-    GT,
+    Gt,
     /// This is a lower than operator.
-    LT,
+    Lt,
     /// This is a comma (,) delimiter.
-    COMMA,
+    Comma,
     /// This is a semicolon (;) delimiter.
-    SEMICOLON,
+    Semicolon,
     /// This is a left parenthesis
-    LPAREN,
+    Lparen,
     /// This is a right parenthesis
-    RPAREN,
+    Rparen,
     /// This is a left brace
-    LBRACE,
+    Lbrace,
     /// This is a right brace
-    RBRACE,
+    Rbrace,
     /// This is a function keyword
-    FUNCTION,
+    Function,
     /// This is a let keyword.
-    LET,
+    Let,
     /// This is the "if" keyword.
-    IF,
+    If,
     /// This is the "else" keyword.
-    ELSE,
+    Else,
     /// This is the "return" keyword.
-    RETURN,
+    Return,
     /// This is the "true" keyword.
-    TRUE,
+    True,
     /// This is the "false" keyword.
-    FALSE,
+    False,
 }
 
 impl FromStr for TokenKind {
@@ -98,30 +97,30 @@ impl FromStr for TokenKind {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let tkind = match s {
-            "" => Self::EOF,
-            "IDENT" => Self::IDENT,
-            "INT" => Self::INT,
-            "=" => Self::ASSIGN,
-            "+" => Self::PLUS,
-            "-" => Self::MINUS,
-            "!" => Self::NOT,
-            "*" => Self::MULTIPLY,
-            "/" => Self::DIVIDE,
-            "," => Self::COMMA,
-            ";" => Self::SEMICOLON,
-            "(" => Self::LPAREN,
-            ")" => Self::RPAREN,
-            "{" => Self::LBRACE,
-            "}" => Self::RBRACE,
-            "<" => Self::LT,
-            ">" => Self::GT,
-            "FUNCTION" => Self::FUNCTION,
-            "LET" => Self::LET,
-            "IF" => Self::IF,
-            "ELSE" => Self::ELSE,
-            "TRUE" => Self::TRUE,
-            "FALSE" => Self::FALSE,
-            "RETURN" => Self::RETURN,
+            "" => Self::Eof,
+            "Ident" => Self::Ident,
+            "Int" => Self::Int,
+            "=" => Self::Assign,
+            "+" => Self::Plus,
+            "-" => Self::Minus,
+            "!" => Self::Not,
+            "*" => Self::Multiply,
+            "/" => Self::Divide,
+            "," => Self::Comma,
+            ";" => Self::Semicolon,
+            "(" => Self::Lparen,
+            ")" => Self::Rparen,
+            "{" => Self::Lbrace,
+            "}" => Self::Rbrace,
+            "<" => Self::Lt,
+            ">" => Self::Gt,
+            "Function" => Self::Function,
+            "Let" => Self::Let,
+            "If" => Self::If,
+            "Else" => Self::Else,
+            "True" => Self::True,
+            "False" => Self::False,
+            "Return" => Self::Return,
             _ => {
                 return Err("unrecognized token kind");
             }
@@ -134,32 +133,32 @@ impl FromStr for TokenKind {
 impl fmt::Display for TokenKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let v = match self {
-            Self::EOF => "EOF",
-            Self::IDENT => "IDENT",
-            Self::INT => "INT",
-            Self::PLUS => "+",
-            Self::MINUS => "-",
-            Self::MULTIPLY => "*",
-            Self::DIVIDE => "/",
-            Self::NOT => "!",
-            Self::COMMA => ",",
-            Self::SEMICOLON => ";",
-            Self::LPAREN => "(",
-            Self::RPAREN => ")",
-            Self::LBRACE => "{",
-            Self::RBRACE => "}",
-            Self::FUNCTION => "FUNCTION",
-            Self::LET => "let",
-            Self::ASSIGN => "=",
-            Self::EQ => "==",
-            Self::NOT_EQ => "!=",
-            Self::LT => "<",
-            Self::GT => ">",
-            Self::IF => "if",
-            Self::ELSE => "else",
-            Self::TRUE => "true",
-            Self::FALSE => "false",
-            Self::RETURN => "return",
+            Self::Eof => "Eof",
+            Self::Ident => "Ident",
+            Self::Int => "Int",
+            Self::Plus => "+",
+            Self::Minus => "-",
+            Self::Multiply => "*",
+            Self::Divide => "/",
+            Self::Not => "!",
+            Self::Comma => ",",
+            Self::Semicolon => ";",
+            Self::Lparen => "(",
+            Self::Rparen => ")",
+            Self::Lbrace => "{",
+            Self::Rbrace => "}",
+            Self::Function => "fn",
+            Self::Let => "let",
+            Self::Assign => "=",
+            Self::Eq => "==",
+            Self::NotEq => "!=",
+            Self::Lt => "<",
+            Self::Gt => ">",
+            Self::If => "if",
+            Self::Else => "else",
+            Self::True => "true",
+            Self::False => "false",
+            Self::Return => "return",
         };
         write!(f, "{}", v)
     }
@@ -167,18 +166,18 @@ impl fmt::Display for TokenKind {
 
 /// Keyword table.
 pub static KEYWORDS: phf::Map<&'static str, TokenKind> = phf::phf_map! {
-    "let" => TokenKind::LET,
-    "if"  => TokenKind::IF,
-    "true" => TokenKind::TRUE,
-    "false" => TokenKind::FALSE,
-    "else" =>  TokenKind::ELSE,
-    "return" =>  TokenKind::RETURN,
-    "fn" => TokenKind::FUNCTION,
+    "let" => TokenKind::Let,
+    "if"  => TokenKind::If,
+    "true" => TokenKind::True,
+    "false" => TokenKind::False,
+    "else" =>  TokenKind::Else,
+    "return" =>  TokenKind::Return,
+    "fn" => TokenKind::Function,
 };
 
 /// Lookups keyword.
 pub fn lookup_keyword(ident: &str) -> TokenKind {
-    KEYWORDS.get(ident).cloned().unwrap_or(TokenKind::IDENT)
+    KEYWORDS.get(ident).cloned().unwrap_or(TokenKind::Ident)
 }
 
 impl Token {

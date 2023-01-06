@@ -52,7 +52,7 @@ impl<'a> Lexer<'a> {
             _ => {
                 value = Value::new("".into());
                 let span = Span::new(self.lineno, self.column_pos);
-                return Some(Token::new(TokenKind::EOF, value, span));
+                return Some(Token::new(TokenKind::Eof, value, span));
             }
         };
 
@@ -69,22 +69,22 @@ impl<'a> Lexer<'a> {
             kind = match self.lookahead(|&x| x == '=') {
                 Some(ch) => {
                     value = Value::new(format!("{literal}{ch}"));
-                    TokenKind::EQ
+                    TokenKind::Eq
                 }
                 _ => {
                     value = Value::new(literal.into());
-                    TokenKind::ASSIGN
+                    TokenKind::Assign
                 }
             };
         } else if literal == '!' {
             kind = match self.lookahead(|&x| x == '=') {
                 Some(ch) => {
                     value = Value::new(format!("{literal}{ch}"));
-                    TokenKind::NOT_EQ
+                    TokenKind::NotEq
                 }
                 _ => {
                     value = Value::new(literal.into());
-                    TokenKind::NOT
+                    TokenKind::Not
                 }
             };
         } else if literal.is_ascii_digit() {
@@ -95,7 +95,7 @@ impl<'a> Lexer<'a> {
                 }
             }
             value = Value::new(digits);
-            kind = TokenKind::INT;
+            kind = TokenKind::Int;
         } else {
             let literal = literal.to_string();
             kind = literal.parse().ok()?;
@@ -189,90 +189,90 @@ let snow = 9;"#;
         use crate::token::TokenKind::*;
 
         let tests = [
-            (LET, "let"),
-            (IDENT, "five"),
-            (ASSIGN, "="),
-            (INT, "5"),
-            (SEMICOLON, ";"),
-            (LET, "let"),
-            (IDENT, "ten"),
-            (ASSIGN, "="),
-            (INT, "10"),
-            (SEMICOLON, ";"),
-            (LET, "let"),
-            (IDENT, "add"),
-            (ASSIGN, "="),
-            (FUNCTION, "fn"),
-            (LPAREN, "("),
-            (IDENT, "x"),
-            (COMMA, ","),
-            (IDENT, "y"),
-            (RPAREN, ")"),
-            (LBRACE, "{"),
-            (IDENT, "x"),
-            (PLUS, "+"),
-            (IDENT, "y"),
-            (SEMICOLON, ";"),
-            (RBRACE, "}"),
-            (SEMICOLON, ";"),
-            (LET, "let"),
-            (IDENT, "result"),
-            (ASSIGN, "="),
-            (IDENT, "add"),
-            (LPAREN, "("),
-            (IDENT, "five"),
-            (COMMA, ","),
-            (IDENT, "ten"),
-            (RPAREN, ")"),
-            (SEMICOLON, ";"),
-            (NOT, "!"),
-            (MINUS, "-"),
-            (DIVIDE, "/"),
-            (MULTIPLY, "*"),
-            (INT, "5"),
-            (SEMICOLON, ";"),
-            (INT, "5"),
-            (LT, "<"),
-            (INT, "10"),
-            (GT, ">"),
-            (INT, "4"),
-            (SEMICOLON, ";"),
-            (IF, "if"),
-            (LPAREN, "("),
-            (INT, "5"),
-            (LT, "<"),
-            (INT, "10"),
-            (RPAREN, ")"),
-            (LBRACE, "{"),
-            (RETURN, "return"),
-            (TRUE, "true"),
-            (SEMICOLON, ";"),
-            (RBRACE, "}"),
-            (ELSE, "else"),
-            (LBRACE, "{"),
-            (RETURN, "return"),
-            (FALSE, "false"),
-            (SEMICOLON, ";"),
-            (RBRACE, "}"),
-            (INT, "10"),
-            (EQ, "=="),
-            (INT, "10"),
-            (SEMICOLON, ";"),
-            (INT, "10"),
-            (NOT_EQ, "!="),
-            (INT, "9"),
-            (SEMICOLON, ";"),
-            (LET, "let"),
-            (IDENT, "delta"),
-            (ASSIGN, "="),
-            (INT, "9"),
-            (SEMICOLON, ";"),
-            (LET, "let"),
-            (IDENT, "snow"),
-            (ASSIGN, "="),
-            (INT, "9"),
-            (SEMICOLON, ";"),
-            (EOF, ""),
+            (Let, "let"),
+            (Ident, "five"),
+            (Assign, "="),
+            (Int, "5"),
+            (Semicolon, ";"),
+            (Let, "let"),
+            (Ident, "ten"),
+            (Assign, "="),
+            (Int, "10"),
+            (Semicolon, ";"),
+            (Let, "let"),
+            (Ident, "add"),
+            (Assign, "="),
+            (Function, "fn"),
+            (Lparen, "("),
+            (Ident, "x"),
+            (Comma, ","),
+            (Ident, "y"),
+            (Rparen, ")"),
+            (Lbrace, "{"),
+            (Ident, "x"),
+            (Plus, "+"),
+            (Ident, "y"),
+            (Semicolon, ";"),
+            (Rbrace, "}"),
+            (Semicolon, ";"),
+            (Let, "let"),
+            (Ident, "result"),
+            (Assign, "="),
+            (Ident, "add"),
+            (Lparen, "("),
+            (Ident, "five"),
+            (Comma, ","),
+            (Ident, "ten"),
+            (Rparen, ")"),
+            (Semicolon, ";"),
+            (Not, "!"),
+            (Minus, "-"),
+            (Divide, "/"),
+            (Multiply, "*"),
+            (Int, "5"),
+            (Semicolon, ";"),
+            (Int, "5"),
+            (Lt, "<"),
+            (Int, "10"),
+            (Gt, ">"),
+            (Int, "4"),
+            (Semicolon, ";"),
+            (If, "if"),
+            (Lparen, "("),
+            (Int, "5"),
+            (Lt, "<"),
+            (Int, "10"),
+            (Rparen, ")"),
+            (Lbrace, "{"),
+            (Return, "return"),
+            (True, "true"),
+            (Semicolon, ";"),
+            (Rbrace, "}"),
+            (Else, "else"),
+            (Lbrace, "{"),
+            (Return, "return"),
+            (False, "false"),
+            (Semicolon, ";"),
+            (Rbrace, "}"),
+            (Int, "10"),
+            (Eq, "=="),
+            (Int, "10"),
+            (Semicolon, ";"),
+            (Int, "10"),
+            (NotEq, "!="),
+            (Int, "9"),
+            (Semicolon, ";"),
+            (Let, "let"),
+            (Ident, "delta"),
+            (Assign, "="),
+            (Int, "9"),
+            (Semicolon, ";"),
+            (Let, "let"),
+            (Ident, "snow"),
+            (Assign, "="),
+            (Int, "9"),
+            (Semicolon, ";"),
+            (Eof, ""),
         ]
         .into_iter()
         .map(|(kind, val)| Case::new(kind, val));
