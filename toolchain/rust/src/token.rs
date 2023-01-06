@@ -22,8 +22,21 @@ pub struct Token {
 #[derive(Clone, Debug)]
 pub struct Value(String);
 
+impl Value {
+    /// Creates new token value.
+    pub const fn new(value: String) -> Self {
+        Value(value)
+    }
+
+    #[inline]
+    /// Returns a reference to the inner literal value.
+    pub fn literal(&self) -> &str {
+        &self.0
+    }
+}
+
 #[allow(non_camel_case_types)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 /// The kind of token.
 pub enum TokenKind {
     /// This is the end of file.
@@ -57,9 +70,9 @@ pub enum TokenKind {
     /// This is a semicolon (;) delimiter.
     SEMICOLON,
     /// This is a left parenthesis
-    LPARENT,
+    LPAREN,
     /// This is a right parenthesis
-    RPARENT,
+    RPAREN,
     /// This is a left brace
     LBRACE,
     /// This is a right brace
@@ -68,6 +81,16 @@ pub enum TokenKind {
     FUNCTION,
     /// This is a let keyword.
     LET,
+    /// This is the "if" keyword.
+    IF,
+    /// This is the "else" keyword.
+    ELSE,
+    /// This is the "return" keyword.
+    RETURN,
+    /// This is the "true" keyword.
+    TRUE,
+    /// This is the "false" keyword.
+    FALSE,
 }
 
 impl FromStr for TokenKind {
@@ -75,7 +98,7 @@ impl FromStr for TokenKind {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let tkind = match s {
-            "EOF" => Self::EOF,
+            "" => Self::EOF,
             "IDENT" => Self::IDENT,
             "INT" => Self::INT,
             "=" => Self::ASSIGN,
@@ -86,13 +109,22 @@ impl FromStr for TokenKind {
             "/" => Self::DIVIDE,
             "," => Self::COMMA,
             ";" => Self::SEMICOLON,
-            "(" => Self::LPARENT,
-            ")" => Self::RPARENT,
+            "(" => Self::LPAREN,
+            ")" => Self::RPAREN,
             "{" => Self::LBRACE,
             "}" => Self::RBRACE,
+            "<" => Self::LT,
+            ">" => Self::GT,
             "FUNCTION" => Self::FUNCTION,
             "LET" => Self::LET,
-            _ => return Err("unrecognized token kind"),
+            "IF" => Self::IF,
+            "ELSE" => Self::ELSE,
+            "TRUE" => Self::TRUE,
+            "FALSE" => Self::FALSE,
+            "RETURN" => Self::RETURN,
+            _ => {
+                return Err("unrecognized token kind");
+            }
         };
 
         Ok(tkind)
@@ -112,21 +144,43 @@ impl fmt::Display for TokenKind {
             Self::NOT => "!",
             Self::COMMA => ",",
             Self::SEMICOLON => ";",
-            Self::LPARENT => "(",
-            Self::RPARENT => ")",
+            Self::LPAREN => "(",
+            Self::RPAREN => ")",
             Self::LBRACE => "{",
             Self::RBRACE => "}",
             Self::FUNCTION => "FUNCTION",
-            Self::LET => "LET",
+            Self::LET => "let",
             Self::ASSIGN => "=",
             Self::EQ => "==",
             Self::NOT_EQ => "!=",
             Self::LT => "<",
             Self::GT => ">",
+            Self::IF => "if",
+            Self::ELSE => "else",
+            Self::TRUE => "true",
+            Self::FALSE => "false",
+            Self::RETURN => "return",
         };
         write!(f, "{}", v)
     }
 }
+
+/// Keyword table.
+pub static KEYWORDS: phf::Map<&'static str, TokenKind> = phf::phf_map! {
+    "let" => TokenKind::LET,
+    "if"  => TokenKind::IF,
+    "true" => TokenKind::TRUE,
+    "false" => TokenKind::FALSE,
+    "else" =>  TokenKind::ELSE,
+    "return" =>  TokenKind::RETURN,
+    "fn" => TokenKind::FUNCTION,
+};
+
+/// Lookups keyword.
+pub fn lookup_keyword(ident: &str) -> TokenKind {
+    KEYWORDS.get(ident).cloned().unwrap_or(TokenKind::IDENT)
+}
+
 impl Token {
     /// Creates new token.
     pub const fn new(kind: TokenKind, value: Value, span: Span) -> Self {
