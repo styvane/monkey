@@ -28,10 +28,10 @@ impl<'a> fmt::Debug for Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    /// Creates new lexer.
-    pub const fn new(input: Peekable<Chars<'a>>) -> Self {
+    /// Creates new lexer with given string input.
+    pub fn from(input: &'a str) -> Self {
         Self {
-            input,
+            input: input.chars().peekable(),
             lineno: 1,
             column_pos: 1,
         }
@@ -277,7 +277,7 @@ let snow = 9;"#;
         .into_iter()
         .map(|(kind, val)| Case::new(kind, val));
 
-        let mut lexer = Lexer::new(input.chars().peekable());
+        let mut lexer = Lexer::from(input);
         for (index, case) in tests.enumerate() {
             let token = lexer.next_token().expect("failed to create lexeme");
             assert_eq!(

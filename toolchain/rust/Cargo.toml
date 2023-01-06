@@ -1,8 +1,13 @@
 [package]
-name = "rust"
+name = "monkey"
 version = "0.1.0"
 edition = "2021"
 
 
+[[bin]]
+name = "monkey"
+path = "bin/interp.rs"
+
 [dependencies]
 phf = { version = "0.11", features = ["macros"] }
+rustyline = "10.0.0"
