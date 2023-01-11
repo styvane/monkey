@@ -191,15 +191,15 @@ impl Token {
 /// The Span data represents a region of code associated with an input token.
 pub struct Span {
     /// The line number for this token.
-    pub lineno: u64,
+    pub lineno: usize,
     /// The column number where this token was found.
-    pub column_pos: u64,
+    pub column_pos: usize,
 }
 
 impl Span {
     /// Creates new span.
     #[inline]
-    pub const fn new(lineno: u64, column_pos: u64) -> Self {
+    pub const fn new(lineno: usize, column_pos: usize) -> Self {
         Self { lineno, column_pos }
     }
 }

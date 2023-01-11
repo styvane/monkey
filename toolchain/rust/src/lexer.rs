@@ -4,42 +4,47 @@
 
 use std::fmt::{self, Write};
 use std::iter::Peekable;
-use std::str::Chars;
+use std::str::CharIndices;
 
 use crate::token::{lookup_keyword, Span, Token, TokenKind, Value};
 
 /// Lexer type.
-pub struct Lexer<'a> {
+pub struct Lexer<I>
+where
+    I: Iterator<Item = (usize, char)>,
+{
     /// The current input string.
-    pub input: Peekable<Chars<'a>>,
+    pub chars: Peekable<I>,
     /// The current line number in the input.
-    pub lineno: u64,
-    /// The current column position.
-    pub column_pos: u64,
+    pub lineno: usize,
 }
 
-impl<'a> fmt::Debug for Lexer<'a> {
+impl<I> fmt::Debug for Lexer<I>
+where
+    I: Iterator<Item = (usize, char)>,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Lexer")
             .field("lineno", &self.lineno)
-            .field("column_pos", &self.column_pos)
             .finish()
     }
 }
 
-impl<'a> Lexer<'a> {
+impl<'a> Lexer<CharIndices<'a>> {
     /// Creates new lexer with given string input.
-    pub fn from(input: &'a str) -> Self {
-        Self {
-            input: input.chars().peekable(),
-            lineno: 1,
-            column_pos: 1,
-        }
+    pub fn from_text(input: &'a str) -> Lexer<CharIndices> {
+        let chars = input.char_indices().peekable();
+        Self { chars, lineno: 1 }
     }
+}
 
+impl<I> Lexer<I>
+where
+    I: Iterator<Item = (usize, char)>,
+{
     /// Eats the whitespace from input.
     fn eat_whitespace(&mut self) {
-        while self.lookahead(|x| x.is_whitespace()).is_some() {}
+        while self.peek_char(|&x| x.is_whitespace()).is_some() {}
     }
 
     /// Returns the next token.
@@ -47,11 +52,11 @@ impl<'a> Lexer<'a> {
         self.eat_whitespace();
         let value: Value;
         let kind: TokenKind;
-        let literal = match self.input.next() {
-            Some(ch) => ch,
+        let (position, literal) = match self.chars.next() {
+            Some((pos, ch)) => (pos, ch),
             _ => {
                 value = Value::new("".into());
-                let span = Span::new(self.lineno, self.column_pos);
+                let span = Span::new(self.lineno, 0);
                 return Some(Token::new(TokenKind::Eof, value, span));
             }
         };
@@ -66,8 +71,8 @@ impl<'a> Lexer<'a> {
             kind = lookup_keyword(&ident);
             value = Value::new(ident)
         } else if literal == '=' {
-            kind = match self.lookahead(|&x| x == '=') {
-                Some(ch) => {
+            kind = match self.peek_char(|&x| x == '=') {
+                Some((_, ch)) => {
                     value = Value::new(format!("{literal}{ch}"));
                     TokenKind::Eq
                 }
@@ -77,8 +82,8 @@ impl<'a> Lexer<'a> {
                 }
             };
         } else if literal == '!' {
-            kind = match self.lookahead(|&x| x == '=') {
-                Some(ch) => {
+            kind = match self.peek_char(|&x| x == '=') {
+                Some((_, ch)) => {
                     value = Value::new(format!("{literal}{ch}"));
                     TokenKind::NotEq
                 }
@@ -101,15 +106,14 @@ impl<'a> Lexer<'a> {
             kind = literal.parse().ok()?;
             value = Value::new(literal);
         }
-        self.column_pos += 1;
-        let span = Span::new(self.lineno, self.column_pos);
+        let span = Span::new(self.lineno, position);
         Some(Token::new(kind, value, span))
     }
 
     /// Returns the identitifer.
     fn parse_identifier(&mut self) -> Option<String> {
         let mut ident = String::new();
-        while let Some(ch) = self.lookahead(is_identifier) {
+        while let Some((_, ch)) = self.peek_char(is_identifier) {
             if write!(&mut ident, "{}", ch).is_err() {
                 return None;
             }
@@ -119,15 +123,15 @@ impl<'a> Lexer<'a> {
     }
 
     /// Inspect next element.
-    fn lookahead(&mut self, func: impl FnOnce(&char) -> bool) -> Option<char> {
-        self.input.next_if(func)
+    fn peek_char(&mut self, func: impl FnOnce(&char) -> bool) -> Option<(usize, char)> {
+        self.chars.next_if(|(_, c)| func(c))
     }
 
     /// Return a digit.
     fn parse_int(&mut self) -> Option<String> {
         let mut digits = String::new();
 
-        while let Some(ch) = self.lookahead(|x| x.is_ascii_digit()) {
+        while let Some((_, ch)) = self.peek_char(|&x| x.is_ascii_digit()) {
             if write!(&mut digits, "{}", ch).is_err() {
                 return None;
             }
@@ -277,7 +281,7 @@ let snow = 9;"#;
         .into_iter()
         .map(|(kind, val)| Case::new(kind, val));
 
-        let mut lexer = Lexer::from(input);
+        let mut lexer = Lexer::from_text(input);
         for (index, case) in tests.enumerate() {
             let token = lexer.next_token().expect("failed to create lexeme");
             assert_eq!(

@@ -13,7 +13,7 @@ const PROMPT: &str = ">> ";
 pub fn start(mut writer: impl io::Write) -> Result<()> {
     let mut line_reader = Editor::<()>::new()?;
     while let Ok(line) = line_reader.readline(PROMPT) {
-        let mut lexer = Lexer::from(&line);
+        let mut lexer = Lexer::from_text(&line);
         while let Some(tok) = lexer.next_token() {
             if tok.kind == TokenKind::Eof {
                 break;
