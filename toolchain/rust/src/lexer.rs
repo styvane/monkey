@@ -63,7 +63,7 @@ where
 
         if is_identifier(&literal) {
             let mut ident = String::from(literal);
-            if let Some(value) = self.parse_identifier() {
+            if let Some(value) = self.lex_identifier() {
                 if write!(&mut ident, "{}", value).is_err() {
                     return None;
                 }
@@ -94,7 +94,7 @@ where
             };
         } else if literal.is_ascii_digit() {
             let mut digits = String::from(literal);
-            if let Some(extra_digits) = self.parse_int() {
+            if let Some(extra_digits) = self.lex_int() {
                 if write!(&mut digits, "{}", extra_digits).is_err() {
                     return None;
                 }
@@ -111,7 +111,7 @@ where
     }
 
     /// Returns the identitifer.
-    fn parse_identifier(&mut self) -> Option<String> {
+    fn lex_identifier(&mut self) -> Option<String> {
         let mut ident = String::new();
         while let Some((_, ch)) = self.peek_char(is_identifier) {
             if write!(&mut ident, "{}", ch).is_err() {
@@ -128,7 +128,7 @@ where
     }
 
     /// Return a digit.
-    fn parse_int(&mut self) -> Option<String> {
+    fn lex_int(&mut self) -> Option<String> {
         let mut digits = String::new();
 
         while let Some((_, ch)) = self.peek_char(|&x| x.is_ascii_digit()) {
