@@ -6,7 +6,8 @@ use std::fmt::{self, Write};
 use std::iter::Peekable;
 use std::str::CharIndices;
 
-use crate::token::{lookup_keyword, Span, Token, TokenKind, Value};
+use crate::lookup_keyword;
+use crate::token::{Span, Token, TokenKind, Value};
 
 /// Lexer type.
 pub struct Lexer<I>
@@ -68,7 +69,7 @@ where
                     return None;
                 }
             }
-            kind = lookup_keyword(&ident);
+            kind = lookup_keyword!(ident.as_str());
             value = Value::new(ident)
         } else if literal == '=' {
             kind = match self.peek_char(|&x| x == '=') {

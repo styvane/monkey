@@ -9,5 +9,4 @@ name = "monkey"
 path = "bin/interp.rs"
 
 [dependencies]
-phf = { version = "0.11", features = ["macros"] }
 rustyline = "10.0.0"

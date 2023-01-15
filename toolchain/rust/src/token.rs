@@ -165,19 +165,20 @@ impl fmt::Display for TokenKind {
 }
 
 /// Keyword table.
-pub static KEYWORDS: phf::Map<&'static str, TokenKind> = phf::phf_map! {
-    "let" => TokenKind::Let,
-    "if"  => TokenKind::If,
-    "true" => TokenKind::True,
-    "false" => TokenKind::False,
-    "else" =>  TokenKind::Else,
-    "return" =>  TokenKind::Return,
-    "fn" => TokenKind::Function,
-};
-
-/// Lookups keyword.
-pub fn lookup_keyword(ident: &str) -> TokenKind {
-    KEYWORDS.get(ident).cloned().unwrap_or(TokenKind::Ident)
+#[macro_export]
+macro_rules! lookup_keyword {
+    ($token_str:expr) => {
+        match $token_str {
+            "let" => TokenKind::Let,
+            "if" => TokenKind::If,
+            "true" => TokenKind::True,
+            "false" => TokenKind::False,
+            "else" => TokenKind::Else,
+            "return" => TokenKind::Return,
+            "fn" => TokenKind::Function,
+            _ => TokenKind::Ident,
+        }
+    };
 }
 
 impl Token {
