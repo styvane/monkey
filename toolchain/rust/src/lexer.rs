@@ -45,7 +45,7 @@ where
 {
     /// Eats the whitespace from input.
     fn eat_whitespace(&mut self) {
-        while self.peek_char(|&x| x.is_whitespace()).is_some() {}
+        while self.lookahead(|&x| x.is_whitespace()).is_some() {}
     }
 
     /// Returns the next token.
@@ -72,21 +72,21 @@ where
             kind = lookup_keyword!(ident.as_str());
             value = Value::new(ident)
         } else if literal == '=' {
-            kind = match self.peek_char(|&x| x == '=') {
+            kind = match self.lookahead(|&x| x == '=') {
                 Some((_, ch)) => {
                     value = Value::new(format!("{literal}{ch}"));
-                    TokenKind::Eq
+                    TokenKind::EqEq
                 }
                 _ => {
                     value = Value::new(literal.into());
-                    TokenKind::Assign
+                    TokenKind::Eq
                 }
             };
         } else if literal == '!' {
-            kind = match self.peek_char(|&x| x == '=') {
+            kind = match self.lookahead(|&x| x == '=') {
                 Some((_, ch)) => {
                     value = Value::new(format!("{literal}{ch}"));
-                    TokenKind::NotEq
+                    TokenKind::Ne
                 }
                 _ => {
                     value = Value::new(literal.into());
@@ -114,7 +114,7 @@ where
     /// Returns the identitifer.
     fn lex_identifier(&mut self) -> Option<String> {
         let mut ident = String::new();
-        while let Some((_, ch)) = self.peek_char(is_identifier) {
+        while let Some((_, ch)) = self.lookahead(is_identifier) {
             if write!(&mut ident, "{}", ch).is_err() {
                 return None;
             }
@@ -124,7 +124,7 @@ where
     }
 
     /// Inspect next element.
-    fn peek_char(&mut self, func: impl FnOnce(&char) -> bool) -> Option<(usize, char)> {
+    fn lookahead(&mut self, func: impl FnOnce(&char) -> bool) -> Option<(usize, char)> {
         self.chars.next_if(|(_, c)| func(c))
     }
 
@@ -132,7 +132,7 @@ where
     fn lex_int(&mut self) -> Option<String> {
         let mut digits = String::new();
 
-        while let Some((_, ch)) = self.peek_char(|&x| x.is_ascii_digit()) {
+        while let Some((_, ch)) = self.lookahead(|&x| x.is_ascii_digit()) {
             if write!(&mut digits, "{}", ch).is_err() {
                 return None;
             }
@@ -196,17 +196,17 @@ let snow = 9;"#;
         let tests = [
             (Let, "let"),
             (Ident, "five"),
-            (Assign, "="),
+            (Eq, "="),
             (Int, "5"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Let, "let"),
             (Ident, "ten"),
-            (Assign, "="),
+            (Eq, "="),
             (Int, "10"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Let, "let"),
             (Ident, "add"),
-            (Assign, "="),
+            (Eq, "="),
             (Function, "fn"),
             (Lparen, "("),
             (Ident, "x"),
@@ -217,31 +217,31 @@ let snow = 9;"#;
             (Ident, "x"),
             (Plus, "+"),
             (Ident, "y"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Rbrace, "}"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Let, "let"),
             (Ident, "result"),
-            (Assign, "="),
+            (Eq, "="),
             (Ident, "add"),
             (Lparen, "("),
             (Ident, "five"),
             (Comma, ","),
             (Ident, "ten"),
             (Rparen, ")"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Not, "!"),
             (Minus, "-"),
-            (Divide, "/"),
-            (Multiply, "*"),
+            (Slash, "/"),
+            (Star, "*"),
             (Int, "5"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Int, "5"),
             (Lt, "<"),
             (Int, "10"),
             (Gt, ">"),
             (Int, "4"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (If, "if"),
             (Lparen, "("),
             (Int, "5"),
@@ -251,32 +251,32 @@ let snow = 9;"#;
             (Lbrace, "{"),
             (Return, "return"),
             (True, "true"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Rbrace, "}"),
             (Else, "else"),
             (Lbrace, "{"),
             (Return, "return"),
             (False, "false"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Rbrace, "}"),
             (Int, "10"),
-            (Eq, "=="),
+            (EqEq, "=="),
             (Int, "10"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Int, "10"),
-            (NotEq, "!="),
+            (Ne, "!="),
             (Int, "9"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Let, "let"),
             (Ident, "delta"),
-            (Assign, "="),
+            (Eq, "="),
             (Int, "9"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Let, "let"),
             (Ident, "snow"),
-            (Assign, "="),
+            (Eq, "="),
             (Int, "9"),
-            (Semicolon, ";"),
+            (Semi, ";"),
             (Eof, ""),
         ]
         .into_iter()

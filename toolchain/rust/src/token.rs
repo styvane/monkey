@@ -35,6 +35,35 @@ impl Value {
     }
 }
 
+#[derive(Debug, Clone)]
+/// Punctuation symbol tokens.
+pub enum Punctuation {
+    /// Assignment symbol.
+    Eq,
+    /// This a plus (+) operator.
+    Plus,
+    /// This is minus (-) operator
+    Minus,
+    /// This is a not (!) operator.
+    Not,
+    /// This is divide (/) operator.
+    Slash,
+    /// This is a multiply operator.
+    Star,
+    /// This is an equal operator.
+    EqEq,
+    /// This is a not equal operator.
+    Ne,
+    /// This is a greater than operator.
+    Gt,
+    /// This is a lower than operator.
+    Lt,
+    /// This is a comma (,) delimiter.
+    Comma,
+    /// This is a semicolon (;) delimiter.
+    Semi,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 /// The kind of token.
 pub enum TokenKind {
@@ -45,7 +74,7 @@ pub enum TokenKind {
     /// This is an integer.
     Int,
     /// This is a assignment operator.
-    Assign,
+    Eq,
     /// This a plus (+) operator.
     Plus,
     /// This is minus (-) operator
@@ -53,13 +82,13 @@ pub enum TokenKind {
     /// This is a not (!) operator.
     Not,
     /// This is divide (/) operator.
-    Divide,
+    Slash,
     /// This is a multiply operator.
-    Multiply,
+    Star,
     /// This is an equal operator.
-    Eq,
+    EqEq,
     /// This is a not equal operator.
-    NotEq,
+    Ne,
     /// This is a greater than operator.
     Gt,
     /// This is a lower than operator.
@@ -67,7 +96,7 @@ pub enum TokenKind {
     /// This is a comma (,) delimiter.
     Comma,
     /// This is a semicolon (;) delimiter.
-    Semicolon,
+    Semi,
     /// This is a left parenthesis
     Lparen,
     /// This is a right parenthesis
@@ -100,20 +129,21 @@ impl FromStr for TokenKind {
             "" => Self::Eof,
             "Ident" => Self::Ident,
             "Int" => Self::Int,
-            "=" => Self::Assign,
+            "=" => Self::Eq,
             "+" => Self::Plus,
             "-" => Self::Minus,
             "!" => Self::Not,
-            "*" => Self::Multiply,
-            "/" => Self::Divide,
+            "*" => Self::Star,
+            "/" => Self::Slash,
             "," => Self::Comma,
-            ";" => Self::Semicolon,
+            ";" => Self::Semi,
             "(" => Self::Lparen,
             ")" => Self::Rparen,
             "{" => Self::Lbrace,
             "}" => Self::Rbrace,
             "<" => Self::Lt,
             ">" => Self::Gt,
+            "==" => Self::EqEq,
             "Function" => Self::Function,
             "Let" => Self::Let,
             "If" => Self::If,
@@ -138,20 +168,20 @@ impl fmt::Display for TokenKind {
             Self::Int => "Int",
             Self::Plus => "+",
             Self::Minus => "-",
-            Self::Multiply => "*",
-            Self::Divide => "/",
+            Self::Star => "*",
+            Self::Slash => "/",
             Self::Not => "!",
             Self::Comma => ",",
-            Self::Semicolon => ";",
+            Self::Semi => ";",
             Self::Lparen => "(",
             Self::Rparen => ")",
             Self::Lbrace => "{",
             Self::Rbrace => "}",
             Self::Function => "fn",
             Self::Let => "let",
-            Self::Assign => "=",
-            Self::Eq => "==",
-            Self::NotEq => "!=",
+            Self::Eq => "=",
+            Self::EqEq => "==",
+            Self::Ne => "!=",
             Self::Lt => "<",
             Self::Gt => ">",
             Self::If => "if",
