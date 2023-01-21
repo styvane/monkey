@@ -2,12 +2,14 @@
 //!
 //! This module implement the lexer.
 
-use std::fmt::{self, Write};
+use std::fmt;
+
 use std::iter::Peekable;
 use std::str::CharIndices;
 
-use crate::lookup_keyword;
-use crate::token::{Span, Token, TokenKind, Value};
+use super::span::Span;
+use super::token::{Token, TokenValue};
+use super::token_kind::TokenKind;
 
 /// Lexer type.
 pub struct Lexer<I>
@@ -39,6 +41,51 @@ impl<'a> Lexer<CharIndices<'a>> {
     }
 }
 
+/// Matches an operator.
+macro_rules! operator {
+    () => {
+        '+' | '-' | '*' | '/' | '!' | '=' | '<' | '>'
+    };
+}
+
+/// Matches a delimiter
+macro_rules! delimiter {
+    () => {
+        '{' | '}' | '(' | ')' | '[' | ']'
+    };
+}
+
+/// Return the kind of delimiter.
+macro_rules! delimiter_kind {
+    ($del:expr) => {
+        match $del {
+            '{' => TokenKind::Lbrace,
+            '}' => TokenKind::Rbrace,
+            '(' => TokenKind::Lparen,
+            ')' => TokenKind::Rparen,
+            '[' => TokenKind::Lbracket,
+            ']' => TokenKind::Rbracket,
+            _ => unreachable!(),
+        }
+    };
+}
+
+/// Lookup keyword.
+macro_rules! lookup_keyword {
+    ($word:expr) => {
+        match $word.as_str() {
+            "let" => TokenKind::Let,
+            "true" => TokenKind::True,
+            "false" => TokenKind::False,
+            "if" => TokenKind::If,
+            "else" => TokenKind::Else,
+            "return" => TokenKind::Return,
+            "fn" => TokenKind::Function,
+            _ => TokenKind::Ident,
+        }
+    };
+}
+
 impl<I> Lexer<I>
 where
     I: Iterator<Item = (usize, char)>,
@@ -51,75 +98,87 @@ where
     /// Returns the next token.
     pub fn next_token(&mut self) -> Option<Token> {
         self.eat_whitespace();
-        let value: Value;
-        let kind: TokenKind;
-        let (position, literal) = match self.chars.next() {
-            Some((pos, ch)) => (pos, ch),
+
+        let mut token = Token::new(TokenValue::Eof, TokenKind::Eof, Span::new(self.lineno, 0));
+        let Some((position, literal)) =  self.chars.next() else { return Some(token) };
+
+        token.span = Span::new(self.lineno, position);
+
+        match literal {
+            ',' => {
+                token.value = TokenValue::Comma;
+                token.kind = TokenKind::Comma;
+            }
+            ';' => {
+                token.value = TokenValue::Semi;
+                token.kind = TokenKind::Semi;
+            }
+            operator!() => {
+                if literal == '=' {
+                    if let Some((_, ch)) = self.lookahead(|&x| x == '=') {
+                        token.value = TokenValue::Operator(format!("{literal}{ch}"));
+                        token.kind = TokenKind::EqEq;
+                    } else {
+                        token.value = TokenValue::Operator(literal.into());
+                        token.kind = TokenKind::Eq;
+                    }
+                } else if literal == '!' {
+                    if let Some((_, ch)) = self.lookahead(|&x| x == '=') {
+                        token.value = TokenValue::Operator(format!("{literal}{ch}"));
+                        token.kind = TokenKind::Ne;
+                    } else {
+                        token.value = TokenValue::Operator(literal.into());
+                        token.kind = TokenKind::Not;
+                    }
+                } else {
+                    let literal: String = literal.into();
+                    let kind = TokenKind::from(literal.as_str());
+                    token.value = TokenValue::Operator(literal);
+                    token.kind = kind;
+                }
+            }
+            delimiter!() => {
+                token.value = TokenValue::Delimiter(literal);
+                token.kind = delimiter_kind!(literal);
+            }
             _ => {
-                value = Value::new("".into());
-                let span = Span::new(self.lineno, 0);
-                return Some(Token::new(TokenKind::Eof, value, span));
+                if is_identifier(&literal) {
+                    let mut ident = String::from(literal);
+                    if let Some(value) = self.lex_identifier() {
+                        ident.push_str(&value);
+                    }
+
+                    let kind = lookup_keyword!(ident);
+                    token.value = TokenValue::Word(ident);
+                    token.kind = kind;
+                } else if literal.is_ascii_digit() {
+                    let mut digits = String::from(literal);
+                    if let Some(extra_digits) = self.lex_int() {
+                        digits.push_str(&extra_digits);
+                    }
+                    token = Token::new(
+                        TokenValue::Number(digits),
+                        TokenKind::Number,
+                        Span::new(self.lineno, position),
+                    );
+                } else {
+                    token.value = TokenValue::Unknown(literal);
+                    token.kind = TokenKind::Unknown;
+                }
             }
         };
-
-        if is_identifier(&literal) {
-            let mut ident = String::from(literal);
-            if let Some(value) = self.lex_identifier() {
-                if write!(&mut ident, "{}", value).is_err() {
-                    return None;
-                }
-            }
-            kind = lookup_keyword!(ident.as_str());
-            value = Value::new(ident)
-        } else if literal == '=' {
-            kind = match self.lookahead(|&x| x == '=') {
-                Some((_, ch)) => {
-                    value = Value::new(format!("{literal}{ch}"));
-                    TokenKind::EqEq
-                }
-                _ => {
-                    value = Value::new(literal.into());
-                    TokenKind::Eq
-                }
-            };
-        } else if literal == '!' {
-            kind = match self.lookahead(|&x| x == '=') {
-                Some((_, ch)) => {
-                    value = Value::new(format!("{literal}{ch}"));
-                    TokenKind::Ne
-                }
-                _ => {
-                    value = Value::new(literal.into());
-                    TokenKind::Not
-                }
-            };
-        } else if literal.is_ascii_digit() {
-            let mut digits = String::from(literal);
-            if let Some(extra_digits) = self.lex_int() {
-                if write!(&mut digits, "{}", extra_digits).is_err() {
-                    return None;
-                }
-            }
-            value = Value::new(digits);
-            kind = TokenKind::Int;
-        } else {
-            let literal = literal.to_string();
-            kind = literal.parse().ok()?;
-            value = Value::new(literal);
-        }
-        let span = Span::new(self.lineno, position);
-        Some(Token::new(kind, value, span))
+        Some(token)
     }
 
     /// Returns the identitifer.
     fn lex_identifier(&mut self) -> Option<String> {
         let mut ident = String::new();
         while let Some((_, ch)) = self.lookahead(is_identifier) {
-            if write!(&mut ident, "{}", ch).is_err() {
-                return None;
-            }
+            ident.push(ch);
         }
-
+        if ident.is_empty() {
+            return None;
+        }
         Some(ident)
     }
 
@@ -131,11 +190,11 @@ where
     /// Return a digit.
     fn lex_int(&mut self) -> Option<String> {
         let mut digits = String::new();
-
         while let Some((_, ch)) = self.lookahead(|&x| x.is_ascii_digit()) {
-            if write!(&mut digits, "{}", ch).is_err() {
-                return None;
-            }
+            digits.push(ch);
+        }
+        if digits.is_empty() {
+            return None;
         }
         Some(digits)
     }
@@ -149,7 +208,8 @@ fn is_identifier(c: &char) -> bool {
 #[cfg(test)]
 mod tests {
     use super::Lexer;
-    use crate::token::TokenKind;
+    use crate::token::TokenValue;
+    use crate::token_kind::TokenKind;
 
     #[test]
     fn create_lexemes_successfully() {
@@ -170,128 +230,126 @@ return false;
 }
 10 == 10;
 10 != 9;
-let delta = 9;
+let nine = 9;
 let snow = 9;"#;
 
         #[derive(Debug)]
-        struct Case<'a> {
+        struct Case {
+            /// Token value
+            expected_value: TokenValue,
             /// Expected token kind
             expected_kind: TokenKind,
-            /// token literal
-            value: &'a str,
         }
 
-        impl<'a> Case<'a> {
+        impl Case {
             /// Create new test case
-            const fn new(expected_kind: TokenKind, value: &'a str) -> Self {
+            const fn new(expected_value: TokenValue, expected_kind: TokenKind) -> Self {
                 Self {
+                    expected_value,
                     expected_kind,
-                    value,
                 }
             }
         }
 
-        use crate::token::TokenKind::*;
-
+        use super::TokenKind::*;
         let tests = [
-            (Let, "let"),
-            (Ident, "five"),
-            (Eq, "="),
-            (Int, "5"),
-            (Semi, ";"),
-            (Let, "let"),
-            (Ident, "ten"),
-            (Eq, "="),
-            (Int, "10"),
-            (Semi, ";"),
-            (Let, "let"),
-            (Ident, "add"),
-            (Eq, "="),
-            (Function, "fn"),
-            (Lparen, "("),
-            (Ident, "x"),
-            (Comma, ","),
-            (Ident, "y"),
-            (Rparen, ")"),
-            (Lbrace, "{"),
-            (Ident, "x"),
-            (Plus, "+"),
-            (Ident, "y"),
-            (Semi, ";"),
-            (Rbrace, "}"),
-            (Semi, ";"),
-            (Let, "let"),
-            (Ident, "result"),
-            (Eq, "="),
-            (Ident, "add"),
-            (Lparen, "("),
-            (Ident, "five"),
-            (Comma, ","),
-            (Ident, "ten"),
-            (Rparen, ")"),
-            (Semi, ";"),
-            (Not, "!"),
-            (Minus, "-"),
-            (Slash, "/"),
-            (Star, "*"),
-            (Int, "5"),
-            (Semi, ";"),
-            (Int, "5"),
-            (Lt, "<"),
-            (Int, "10"),
-            (Gt, ">"),
-            (Int, "4"),
-            (Semi, ";"),
-            (If, "if"),
-            (Lparen, "("),
-            (Int, "5"),
-            (Lt, "<"),
-            (Int, "10"),
-            (Rparen, ")"),
-            (Lbrace, "{"),
-            (Return, "return"),
-            (True, "true"),
-            (Semi, ";"),
-            (Rbrace, "}"),
-            (Else, "else"),
-            (Lbrace, "{"),
-            (Return, "return"),
-            (False, "false"),
-            (Semi, ";"),
-            (Rbrace, "}"),
-            (Int, "10"),
-            (EqEq, "=="),
-            (Int, "10"),
-            (Semi, ";"),
-            (Int, "10"),
-            (Ne, "!="),
-            (Int, "9"),
-            (Semi, ";"),
-            (Let, "let"),
-            (Ident, "delta"),
-            (Eq, "="),
-            (Int, "9"),
-            (Semi, ";"),
-            (Let, "let"),
-            (Ident, "snow"),
-            (Eq, "="),
-            (Int, "9"),
-            (Semi, ";"),
-            (Eof, ""),
+            (TokenValue::Word("let".into()), Let),
+            (TokenValue::Word("five".into()), Ident),
+            (TokenValue::Operator("=".into()), Eq),
+            (TokenValue::Number("5".into()), Number),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Word("let".into()), Let),
+            (TokenValue::Word("ten".into()), Ident),
+            (TokenValue::Operator("=".into()), Eq),
+            (TokenValue::Number("10".into()), Number),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Word("let".into()), Let),
+            (TokenValue::Word("add".into()), Ident),
+            (TokenValue::Operator("=".into()), Eq),
+            (TokenValue::Word("fn".into()), Function),
+            (TokenValue::Delimiter('('), Lparen),
+            (TokenValue::Word("x".into()), Ident),
+            (TokenValue::Comma, Comma),
+            (TokenValue::Word("y".into()), Ident),
+            (TokenValue::Delimiter(')'), Rparen),
+            (TokenValue::Delimiter('{'), Lbrace),
+            (TokenValue::Word("x".into()), Ident),
+            (TokenValue::Operator("+".into()), Plus),
+            (TokenValue::Word("y".into()), Ident),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Delimiter('}'), Rbrace),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Word("let".into()), Let),
+            (TokenValue::Word("result".into()), Ident),
+            (TokenValue::Operator("=".into()), Eq),
+            (TokenValue::Word("add".into()), Ident),
+            (TokenValue::Delimiter('('), Lparen),
+            (TokenValue::Word("five".into()), Ident),
+            (TokenValue::Comma, Comma),
+            (TokenValue::Word("ten".into()), Ident),
+            (TokenValue::Delimiter(')'), Rparen),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Operator("!".into()), Not),
+            (TokenValue::Operator("-".into()), Minus),
+            (TokenValue::Operator("/".into()), Slash),
+            (TokenValue::Operator("*".into()), Star),
+            (TokenValue::Number("5".into()), Number),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Number("5".into()), Number),
+            (TokenValue::Operator("<".into()), Lt),
+            (TokenValue::Number("10".into()), Number),
+            (TokenValue::Operator(">".into()), Gt),
+            (TokenValue::Number("4".into()), Number),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Word("if".into()), If),
+            (TokenValue::Delimiter('('), Lparen),
+            (TokenValue::Number("5".into()), Number),
+            (TokenValue::Operator("<".into()), Lt),
+            (TokenValue::Number("10".into()), Number),
+            (TokenValue::Delimiter(')'), Rparen),
+            (TokenValue::Delimiter('{'), Lbrace),
+            (TokenValue::Word("return".into()), Return),
+            (TokenValue::Word("true".into()), True),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Delimiter('}'), Rbrace),
+            (TokenValue::Word("else".into()), Else),
+            (TokenValue::Delimiter('{'), Lbrace),
+            (TokenValue::Word("return".into()), Return),
+            (TokenValue::Word("false".into()), False),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Delimiter('}'), Rbrace),
+            (TokenValue::Number("10".into()), Number),
+            (TokenValue::Operator("==".into()), EqEq),
+            (TokenValue::Number("10".into()), Number),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Number("10".into()), Number),
+            (TokenValue::Operator("!=".into()), Ne),
+            (TokenValue::Number("9".into()), Number),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Word("let".into()), Let),
+            (TokenValue::Word("nine".into()), Ident),
+            (TokenValue::Operator("=".into()), Eq),
+            (TokenValue::Number("9".into()), Number),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Word("let".into()), Let),
+            (TokenValue::Word("snow".into()), Ident),
+            (TokenValue::Operator("=".into()), Eq),
+            (TokenValue::Number("9".into()), Number),
+            (TokenValue::Semi, Semi),
+            (TokenValue::Eof, Eof),
         ]
         .into_iter()
-        .map(|(kind, val)| Case::new(kind, val));
+        .map(|(v, k)| Case::new(v, k));
 
         let mut lexer = Lexer::from_text(input);
         for (index, case) in tests.enumerate() {
             let token = lexer.next_token().expect("failed to create lexeme");
             assert_eq!(
-                case.expected_kind, token.kind,
+                case.expected_value, token.value,
                 "{index}: {case:?} {token:?}"
             );
             assert_eq!(
-                case.value,
-                token.value.literal(),
+                case.expected_kind, token.kind,
                 "{index}: {case:?} {token:?}"
             );
         }

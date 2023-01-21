@@ -9,4 +9,6 @@
 
 pub mod lexer;
 pub mod repl;
+mod span;
 pub mod token;
+mod token_kind;

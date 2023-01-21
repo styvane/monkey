@@ -5,9 +5,9 @@ use std::io;
 use rustyline::{Editor, Result};
 
 use crate::lexer::Lexer;
-use crate::token::TokenKind;
+use crate::token::TokenValue;
 
-const PROMPT: &str = ">> ";
+const PROMPT: &str = "> ";
 
 /// Starts the REPL.
 pub fn start(mut writer: impl io::Write) -> Result<()> {
@@ -15,7 +15,7 @@ pub fn start(mut writer: impl io::Write) -> Result<()> {
     while let Ok(line) = line_reader.readline(PROMPT) {
         let mut lexer = Lexer::from_text(&line);
         while let Some(tok) = lexer.next_token() {
-            if tok.kind == TokenKind::Eof {
+            if tok.value == TokenValue::Eof {
                 break;
             }
             write!(&mut writer, "{:?}", tok).expect("failed to write");
