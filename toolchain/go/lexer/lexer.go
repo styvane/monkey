@@ -38,86 +38,83 @@ func (l *Lexer) readChar() {
 
 }
 
+// isDelimiter returns true if the character is a delimiter.
+func isDelimiter(ch rune) bool {
+	switch ch {
+	case '(', ')', '{', '}', '[', ']':
+		return true
+	default:
+		return false
+	}
+}
+
+// isOp returns true if the character is an operator.
+func isOp(ch rune) bool {
+	switch ch {
+	case '+', '-', '*', '/', '!', '=', '<', '>':
+		return true
+	default:
+		return false
+	}
+}
+
 // NextToken returns the token corresponding to the current input character.
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
-	var tokType token.TokenType
+	var tokKind token.Kind
 	var literal string
-	l.skipWhitespace()
+	l.eatWhitespace()
 	position := l.position
 	lineno := l.lineNumber
 
-	switch l.ch {
-	case '=':
-		if l.peekChar() == '=' {
+	switch {
+	case l.ch == ';':
+		tokKind = token.SEMI
+	case isDelimiter(l.ch):
+		tokKind = token.LookupDelimiter(l.ch)
+	case l.ch == ',':
+		tokKind = token.COMMA
+	case isOp(l.ch):
+		if l.ch == '!' && l.peekChar() == '=' {
 			ch := l.ch
 			l.readChar()
 			literal = string(ch) + string(l.ch)
-			tokType = token.EQ
-
-		} else {
-			tokType = token.ASSIGN
-		}
-
-	case ';':
-		tokType = token.SEMICOLON
-	case '(':
-		tokType = token.LPAREN
-	case ')':
-		tokType = token.RPAREN
-	case ',':
-		tokType = token.COMMA
-	case '+':
-		tokType = token.PLUS
-	case '{':
-		tokType = token.LBRACE
-	case '}':
-		tokType = token.RBRACE
-	case '-':
-		tokType = token.MINUS
-	case '!':
-		if l.peekChar() == '=' {
+			tokKind = token.NE
+		} else if l.ch == '=' && l.peekChar() == '=' {
 			ch := l.ch
 			l.readChar()
 			literal = string(ch) + string(l.ch)
-			tokType = token.NOT_EQ
-		} else {
-			tokType = token.BANG
-		}
-	case '/':
-		tokType = token.SLASH
-	case '*':
-		tokType = token.ASTERISK
-	case '<':
-		tokType = token.LT
-	case '>':
-		tokType = token.GT
+			tokKind = token.EQEQ
 
-	case 0:
+		} else {
+			tokKind = token.LookupOp(l.ch)
+		}
+
+	case l.ch == 0:
 		tok.Literal = ""
-		tok.Type = token.EOF
+		tok.Kind = token.EOF
 	default:
 		if isLetter(l.ch) {
 			tok.Literal = l.readIdentifier()
-			tok.Type = token.LookupIdent(tok.Literal)
+			tok.Kind = token.LookupIdent(tok.Literal)
 			tok.Span = token.NewSpan(lineno, position)
 			return tok
 		} else if isDigit(l.ch) {
 			position = l.position
 			lineno = l.lineNumber
-			tok.Type = token.INT
+			tok.Kind = token.NUMBER
 			tok.Literal = l.readNumber()
 			tok.Span = token.NewSpan(lineno, position)
 			return tok
 		} else {
-			tokType = token.ILLEGAL
+			tokKind = token.UNKOWN
 		}
 	}
 
 	if literal != "" {
-		tok = token.Token{Type: tokType, Literal: literal, Span: token.NewSpan(lineno, position)}
-	} else if tok.Type == "" {
-		tok = token.NewToken(tokType, l.ch, token.NewSpan(l.lineNumber, position))
+		tok = token.Token{Kind: tokKind, Literal: literal, Span: token.NewSpan(lineno, position)}
+	} else if tok.Kind == "" {
+		tok = token.NewToken(tokKind, l.ch, token.NewSpan(l.lineNumber, position))
 	}
 	l.readChar()
 	return tok
@@ -146,8 +143,8 @@ func isLetter(ch rune) bool {
 	return unicode.IsLetter(ch) || unicode.IsSymbol(ch) || ch == '_'
 }
 
-// Skip white spaces
-func (l *Lexer) skipWhitespace() {
+// eatWhitespace skips white spaces
+func (l *Lexer) eatWhitespace() {
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
 		l.readChar()
 	}

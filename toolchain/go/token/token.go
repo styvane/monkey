@@ -2,33 +2,36 @@
 package token
 
 const (
-	ILLEGAL = "ILLEGAL"
-	EOF     = "EOF"
+	UNKOWN = "UNKNOWN"
+	EOF    = "EOF"
 
 	// Identifiers and literals
-	IDENT = "IDENT" // add, foobar, x, y ...
-	INT   = "INT"   // 123456
+	IDENT  = "IDENT"  // add, foobar, x, y ...
+	NUMBER = "NUMBER" // 123456
 
 	// Operators
-	ASSIGN   = "="
+	EQ       = "="
 	PLUS     = "+"
 	MINUS    = "-"
-	BANG     = "!"
+	NOT      = "!"
 	ASTERISK = "*"
 	SLASH    = "/"
 
-	LT     = "<"
-	GT     = ">"
-	EQ     = "=="
-	NOT_EQ = "!="
+	LT   = "<"
+	GT   = ">"
+	EQEQ = "=="
+	NE   = "!="
+
+	COMMA = ","
+	SEMI  = ";"
 
 	// Delimiters
-	COMMA     = ","
-	SEMICOLON = ";"
-	LPAREN    = "("
-	RPAREN    = ")"
-	LBRACE    = "{"
-	RBRACE    = "{"
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACE   = "{"
+	RBRACE   = "{"
+	LBRACKET = "["
+	RBRACKET = "]"
 
 	// Keywords
 	FUNCTION = "FUNCTION"
@@ -41,7 +44,7 @@ const (
 )
 
 // Keywords table.
-var keywords = map[string]TokenType{
+var keywords = map[string]Kind{
 	"fn":     FUNCTION,
 	"let":    LET,
 	"if":     IF,
@@ -53,7 +56,7 @@ var keywords = map[string]TokenType{
 
 // The Token type represents a lexical token.
 type Token struct {
-	Type    TokenType
+	Kind    Kind
 	Literal string
 	Span
 }
@@ -63,26 +66,70 @@ type Span struct {
 	// Lineno is the line number in the input.
 	Lineno int
 	// ColumnPos is the postion in the input.
-	ColumnPos int
+	LineColumn int
 }
 
 // NewSpan creates a new span with the line number and position.
-func NewSpan(lineno, position int) Span {
-	return Span{Lineno: lineno, ColumnPos: position}
+func NewSpan(lineno, lineColumn int) Span {
+	return Span{Lineno: lineno, LineColumn: lineColumn}
 }
 
-// TokenType represents the type of a token.
-type TokenType string
+// Kind represents the type of a token.
+type Kind string
 
 // NewToken create token.
-func NewToken(tokenType TokenType, ch rune, span Span) Token {
-	return Token{Type: tokenType, Literal: string(ch), Span: span}
+func NewToken(kind Kind, ch rune, span Span) Token {
+	return Token{Kind: kind, Literal: string(ch), Span: span}
 }
 
 // LookupIdent lookup and identifier in input
-func LookupIdent(ident string) TokenType {
+func LookupIdent(ident string) Kind {
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}
 	return IDENT
+}
+
+// LookupOperator lookup an operator.
+func LookupOp(ch rune) Kind {
+	switch ch {
+	case '=':
+		return EQ
+	case '+':
+		return PLUS
+	case '-':
+		return MINUS
+	case '!':
+		return NOT
+	case '*':
+		return ASTERISK
+	case '/':
+		return SLASH
+	case '<':
+		return LT
+	case '>':
+		return GT
+	default:
+		return UNKOWN
+	}
+}
+
+// LookupDelimiter lookup a delimiter.
+func LookupDelimiter(ch rune) Kind {
+	switch ch {
+	case '(':
+		return LPAREN
+	case ')':
+		return RPAREN
+	case '{':
+		return LBRACE
+	case '}':
+		return RBRACE
+	case '[':
+		return LBRACKET
+	case ']':
+		return RBRACKET
+	default:
+		return UNKOWN
+	}
 }
