@@ -58,7 +58,7 @@ func isOp(ch rune) bool {
 	}
 }
 
-// NextToken returns the token corresponding to the current input character.
+// NextToken returns the current input character's token.
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 	var tokKind token.Kind

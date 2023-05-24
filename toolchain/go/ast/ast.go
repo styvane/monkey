@@ -36,20 +36,20 @@ func (p *Program) Literal() string {
 	return ""
 }
 
-// VariableDecl represents a variable declaration.
-type VariableDecl struct {
-	Name  *LocalVarName
+// LocalVariableDecl represents a variable declaration.
+type LocalVariableDecl struct {
+	Name  *VarName
 	Token token.Token // the token.LET token.
 	Value Expression
 }
 
-func (v *VariableDecl) StatementNode()  {}
-func (v *VariableDecl) Literal() string { return v.Token.Literal }
+func (v *LocalVariableDecl) statementNode()  {}
+func (v *LocalVariableDecl) Literal() string { return v.Token.Literal }
 
-// LocalVarName represents a local variable name.
-type LocalVarName struct {
+// VarName represents an identifier's name.
+type VarName struct {
 	Token token.Token // the token.IDENT token.
 	Value string
 }
 
-func (l *LocalVarName) Literal() string { return l.Token.Literal }
+func (v *VarName) Literal() string { return v.Token.Literal }
