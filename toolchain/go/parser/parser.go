@@ -12,6 +12,7 @@ type Parser struct {
 	lexer          *lexer.Lexer
 	currentToken   token.Token
 	lookaheadToken token.Token
+	errors         []ParseError
 }
 
 // New instantiate a new parser.
@@ -60,13 +61,13 @@ func (p *Parser) parseStatement() ast.Statement {
 func (p *Parser) parseVariableDecl() ast.Statement {
 	stmt := &ast.LocalVariableDecl{Token: p.currentToken}
 
-	if !p.isLookaheadToken(token.IDENT) {
+	if !p.expectedLookaheadToken(token.IDENT) {
 		return nil
 	}
 
 	stmt.Name = &ast.VarName{Token: p.currentToken, Value: p.currentToken.Literal}
 
-	if !p.isLookaheadToken(token.EQ) {
+	if !p.expectedLookaheadToken(token.EQ) {
 		return nil
 	}
 
@@ -85,13 +86,18 @@ func (p *Parser) lookaheadTokenIs(k token.Kind) bool {
 	return p.lookaheadToken.Kind == k
 }
 
-func (p *Parser) isLookaheadToken(k token.Kind) bool {
+func (p *Parser) expectedLookaheadToken(k token.Kind) bool {
 	if p.lookaheadTokenIs(k) {
 		p.nextToken()
 		return true
 
 	} else {
+		p.errors = append(p.errors, ParseError{k, p.lookaheadToken.Kind})
 		return false
 	}
 
+}
+
+func (p *Parser) Errors() []ParseError {
+	return p.errors
 }
