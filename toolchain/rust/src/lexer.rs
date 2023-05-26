@@ -8,8 +8,7 @@ use std::iter::Peekable;
 use std::str::CharIndices;
 
 use super::span::Span;
-use super::token::{Token, TokenValue};
-use super::token_kind::TokenKind;
+use super::token::{Token, TokenKind, TokenValue};
 
 /// Lexer type.
 pub struct Lexer<I>
@@ -208,8 +207,8 @@ fn is_identifier(c: &char) -> bool {
 #[cfg(test)]
 mod tests {
     use super::Lexer;
+    use crate::token::TokenKind;
     use crate::token::TokenValue;
-    use crate::token_kind::TokenKind;
 
     #[test]
     fn create_lexemes_successfully() {

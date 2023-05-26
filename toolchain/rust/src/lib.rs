@@ -7,8 +7,11 @@
     clippy::missing_const_for_fn
 )]
 
+mod ast;
+mod error;
+mod expr;
 pub mod lexer;
+pub mod parser;
 pub mod repl;
 mod span;
 pub mod token;
-mod token_kind;
