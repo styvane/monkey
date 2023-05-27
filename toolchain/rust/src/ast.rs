@@ -1,7 +1,8 @@
 //! # AST
 
-mod vardecl;
-pub(crate) use self::vardecl::LocalVarDecl;
+pub(super) mod syntax;
+
+use self::syntax::*;
 
 #[derive(Debug)]
 pub struct Program {
@@ -12,4 +13,5 @@ pub struct Program {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Statement {
     Var(LocalVarDecl),
+    Return(ReturnStatement),
 }

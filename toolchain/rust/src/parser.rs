@@ -2,7 +2,8 @@
 //!
 //! This module implement the parser for the language.
 
-use crate::ast::{LocalVarDecl, Program, Statement};
+use crate::ast::syntax::*;
+use crate::ast::{Program, Statement};
 use crate::error::Error;
 use crate::expr::{Expr, ExprData};
 use crate::lexer::Lexer;
@@ -98,6 +99,7 @@ where
         let token = self.current_token.as_ref()?;
         match token.kind {
             TokenKind::Let => self.parse_var_decl(),
+            TokenKind::Return => self.parse_return_statement(),
             _ => None,
         }
     }
@@ -107,7 +109,7 @@ where
         self.advance_next_if(TokenKind::Ident)?;
         let name = self.current_token.take()?;
         // TODO: skip expression parsing.
-        if self.is_valid_current_token(TokenKind::Semi) {
+        while !self.is_valid_current_token(TokenKind::Semi) {
             self.advance();
         }
         let stmt = Statement::Var(LocalVarDecl {
@@ -116,6 +118,18 @@ where
             expr: ExprData::VariableDecl(Expr, "".into()),
         });
 
+        Some(stmt)
+    }
+
+    fn parse_return_statement(&mut self) -> Option<Statement> {
+        let token = self.current_token.take()?;
+        if !self.is_valid_current_token(TokenKind::Semi) {
+            self.advance();
+        }
+        let stmt = Statement::Return(ReturnStatement {
+            token,
+            expr: ExprData::Return(Expr, "".into()),
+        });
         Some(stmt)
     }
 }
@@ -166,5 +180,24 @@ let foobar = 999999;
             eprintln!("{err}");
         }
         panic!("error: could not compile due to previous error");
+    }
+
+    #[test]
+    fn parse_return_stmt() {
+        let input = r#"
+return 5;
+return add(3, 1);
+return 999999;
+"#;
+
+        let lexer = Lexer::from_text(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse();
+        assert_eq!(program.statements.len(), 3);
+        check_parser_errors(&parser.errors);
+
+        for stmt in &program.statements {
+            assert!(matches!(stmt, Statement::Return(_)))
+        }
     }
 }

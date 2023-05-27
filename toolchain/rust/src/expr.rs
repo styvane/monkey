@@ -8,4 +8,5 @@ pub struct Expr;
 #[derive(Debug, PartialEq, Eq)]
 pub enum ExprData {
     VariableDecl(Expr, String),
+    Return(Expr, String),
 }
