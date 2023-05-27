@@ -16,8 +16,8 @@ type Parser struct {
 }
 
 // New instantiate a new parser.
-func New(l *lexer.Lexer) Parser {
-	p := Parser{lexer: l}
+func New(l *lexer.Lexer) *Parser {
+	p := &Parser{lexer: l}
 
 	p.nextToken()
 	p.nextToken()
@@ -52,6 +52,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	switch p.currentToken.Kind {
 	case token.LET:
 		return p.parseVariableDecl()
+	case token.RETURN:
+		return p.ParseReturnStatement()
 	default:
 		return nil
 	}
@@ -71,7 +73,7 @@ func (p *Parser) parseVariableDecl() ast.Statement {
 		return nil
 	}
 
-	// TODO: We're skipping the expressions until we encounter as semicolon.
+	// TODO: We're skipping the expressions until we encounter a semicolon.
 	for !p.currentTokenIs(token.SEMI) {
 		p.nextToken()
 	}
@@ -98,6 +100,21 @@ func (p *Parser) expectedLookaheadToken(k token.Kind) bool {
 
 }
 
+// Errors returns the slice of parsing errors.
 func (p *Parser) Errors() []ParseError {
 	return p.errors
+}
+
+func (p *Parser) ParseReturnStatement() ast.Statement {
+	stmt := &ast.ReturnStatement{Token: p.currentToken}
+
+	p.nextToken()
+
+	// TODO: We're skipping the expression until we encounter a semicolon.
+
+	for !p.currentTokenIs(token.SEMI) {
+		p.nextToken()
+	}
+
+	return stmt
 }

@@ -22,7 +22,7 @@ let foobar = 838383;
 		t.Fatalf("ParseProgram() return nil")
 	}
 
-	checkParserErrors(t, &p)
+	checkParserErrors(t, p)
 
 	if len(program.Statements) != 3 {
 		t.Fatalf("program.Statements does not contain 3 statements. got=%d", len(program.Statements))
@@ -98,5 +98,37 @@ let foobar ;
 
 	if len(p.errors) == 0 {
 		t.Errorf("expected parser error")
+	}
+}
+
+func TestReturnStatement(t *testing.T) {
+	input := `
+return 5;
+return 10;
+return 993322;
+`
+
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 3 {
+		t.Fatalf("program.Statements does not contains 3 statements. got =%d",
+			len(program.Statements))
+
+	}
+
+	for _, stmt := range program.Statements {
+		retStmt, ok := stmt.(*ast.ReturnStatement)
+		if !ok {
+			t.Errorf("stmt not *ast.ReturnStatement.got=%T", stmt)
+		}
+
+		if retStmt.Literal() != "return" {
+			t.Errorf("returnStmt.Literal not 'return', got %q", retStmt.Literal())
+		}
+
 	}
 }

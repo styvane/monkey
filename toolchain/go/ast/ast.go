@@ -53,3 +53,12 @@ type VarName struct {
 }
 
 func (v *VarName) Literal() string { return v.Token.Literal }
+
+// ReturnStatement represents a return statement.
+type ReturnStatement struct {
+	Token token.Token
+	Value Expression
+}
+
+func (r *ReturnStatement) statementNode()  {}
+func (r *ReturnStatement) Literal() string { return r.Token.Literal }
