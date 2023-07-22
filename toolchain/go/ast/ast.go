@@ -1,12 +1,17 @@
 // Package ast implement the AST data structures.
 package ast
 
-import "github/com/styvane/monkey/token"
+import (
+	"fmt"
+	"github/com/styvane/monkey/token"
+	"strings"
+)
 
 // A Node provide a literal value of the token it's associate
 // with.
 type Node interface {
-	Literal() string
+	fmt.Stringer
+	TokenLiteral() string
 }
 
 // The  Statement interface is implemented by the nodes that are
@@ -29,30 +34,53 @@ type Program struct {
 	Statements []Statement
 }
 
-func (p *Program) Literal() string {
+func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
-		return p.Statements[0].Literal()
+		return p.Statements[0].TokenLiteral()
 	}
 	return ""
 }
 
+func (p *Program) String() string {
+	var out strings.Builder
+	for _, s := range p.Statements {
+		fmt.Fprint(&out, s.String())
+	}
+	return out.String()
+}
+
 // LocalVariableDecl represents a variable declaration.
 type LocalVariableDecl struct {
-	Name  *VarName
 	Token token.Token // the token.LET token.
+	Name  *Identifier
 	Value Expression
 }
 
-func (v *LocalVariableDecl) statementNode()  {}
-func (v *LocalVariableDecl) Literal() string { return v.Token.Literal }
+func (lv *LocalVariableDecl) statementNode()       {}
+func (lv *LocalVariableDecl) TokenLiteral() string { return lv.Token.Literal }
 
-// VarName represents an identifier's name.
-type VarName struct {
+func (lv *LocalVariableDecl) String() string {
+	var out strings.Builder
+	fmt.Fprintf(&out, "%s %s = ", lv.TokenLiteral(), lv.Name.String())
+	if lv.Value != nil {
+		out.WriteString(lv.Value.TokenLiteral())
+	}
+	out.WriteString(";")
+	return out.String()
+}
+
+// Identifier represents an identifier's name.
+type Identifier struct {
 	Token token.Token // the token.IDENT token.
 	Value string
 }
 
-func (v *VarName) Literal() string { return v.Token.Literal }
+func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
+
+func (i *Identifier) String() string {
+	return i.Value
+}
+func (i *Identifier) expressionNode() {}
 
 // ReturnStatement represents a return statement.
 type ReturnStatement struct {
@@ -60,5 +88,36 @@ type ReturnStatement struct {
 	Value Expression
 }
 
-func (r *ReturnStatement) statementNode()  {}
-func (r *ReturnStatement) Literal() string { return r.Token.Literal }
+func (rs *ReturnStatement) statementNode()       {}
+func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
+
+func (rs *ReturnStatement) String() string {
+	var out strings.Builder
+	fmt.Fprintf(&out, "%s ", rs.TokenLiteral())
+	if rs.Value != nil {
+		out.WriteString(rs.Value.String())
+	}
+
+	out.WriteString(";")
+
+	return out.String()
+}
+
+// ExpressionStatement wraps an expression.
+type ExpressionStatement struct {
+	Token token.Token // First token in the associated expression.
+	Expr  Expression
+}
+
+func (es *ExpressionStatement) statementNode() {}
+
+func (es *ExpressionStatement) TokenLiteral() string {
+	return es.Token.Literal
+}
+
+func (es *ExpressionStatement) String() string {
+	if es != nil {
+		return es.Expr.String()
+	}
+	return ""
+}

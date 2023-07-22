@@ -78,8 +78,8 @@ func NewSpan(lineno, lineColumn int) Span {
 type Kind string
 
 // NewToken create token.
-func NewToken(kind Kind, ch rune, span Span) Token {
-	return Token{Kind: kind, Literal: string(ch), Span: span}
+func NewToken(kind Kind, lit string, span Span) Token {
+	return Token{Kind: kind, Literal: lit, Span: span}
 }
 
 // LookupIdent lookup and identifier in input

@@ -114,7 +114,7 @@ func (l *Lexer) NextToken() token.Token {
 	if literal != "" {
 		tok = token.Token{Kind: tokKind, Literal: literal, Span: token.NewSpan(lineno, position)}
 	} else if tok.Kind == "" {
-		tok = token.NewToken(tokKind, l.ch, token.NewSpan(l.lineNumber, position))
+		tok = token.NewToken(tokKind, string(l.ch), token.NewSpan(l.lineNumber, position))
 	}
 	l.readChar()
 	return tok

@@ -43,8 +43,8 @@ let foobar = 838383;
 }
 
 func testLocalVariableDecl(t *testing.T, s ast.Statement, name string) bool {
-	if s.Literal() != "let" {
-		t.Errorf("s.Literal not 'let'. got=%q", s.Literal())
+	if s.TokenLiteral() != "let" {
+		t.Errorf("s.Literal not 'let'. got=%q", s.TokenLiteral())
 		return false
 	}
 
@@ -59,8 +59,8 @@ func testLocalVariableDecl(t *testing.T, s ast.Statement, name string) bool {
 		return false
 	}
 
-	if varDecl.Name.Literal() != name {
-		t.Errorf("varDecl.Name.Literal() not '%s'. got=%s", name, varDecl.Name.Literal())
+	if varDecl.Name.TokenLiteral() != name {
+		t.Errorf("varDecl.Name.TokenLiteral() not '%s'. got=%s", name, varDecl.Name.TokenLiteral())
 		return false
 	}
 	return true
@@ -126,8 +126,8 @@ return 993322;
 			t.Errorf("stmt not *ast.ReturnStatement.got=%T", stmt)
 		}
 
-		if retStmt.Literal() != "return" {
-			t.Errorf("returnStmt.Literal not 'return', got %q", retStmt.Literal())
+		if retStmt.TokenLiteral() != "return" {
+			t.Errorf("returnStmt.Literal not 'return', got %q", retStmt.TokenLiteral())
 		}
 
 	}

@@ -67,7 +67,7 @@ func (p *Parser) parseVariableDecl() ast.Statement {
 		return nil
 	}
 
-	stmt.Name = &ast.VarName{Token: p.currentToken, Value: p.currentToken.Literal}
+	stmt.Name = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
 
 	if !p.expectedLookaheadToken(token.EQ) {
 		return nil
