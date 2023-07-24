@@ -13,6 +13,9 @@ type Parser struct {
 	currentToken   token.Token
 	lookaheadToken token.Token
 	errors         []ParseError
+
+	prefixParseFns map[token.Kind]prefixParseFn
+	infixParseFns  map[token.Kind]infixParseFn
 }
 
 // New instantiate a new parser.
@@ -117,4 +120,18 @@ func (p *Parser) ParseReturnStatement() ast.Statement {
 	}
 
 	return stmt
+}
+
+// PRATT PARSER interface.
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
+func (p *Parser) registerPrefixFn(kind token.Kind, fn prefixParseFn) {
+	p.prefixParseFns[kind] = fn
+}
+
+func (p *Parser) registerInfixFn(kind token.Kind, fn infixParseFn) {
+	p.infixParseFns[kind] = fn
 }
