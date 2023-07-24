@@ -14,4 +14,5 @@ pub struct Program {
 pub enum Statement {
     Var(LocalVarDecl),
     Return(ReturnStatement),
+    Expr(ExprStatement),
 }

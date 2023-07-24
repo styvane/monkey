@@ -14,11 +14,20 @@ pub struct LocalVarDecl {
     pub expr: ExprData,
 }
 
-/// `Return` represents a return statement.
+/// `ReturnStatement` represents a return statement.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ReturnStatement {
     /// `return` token.
     pub token: Token,
     /// returned expresssion
+    pub expr: ExprData,
+}
+
+/// `ExprStatement` represents an expression statement.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ExprStatement {
+    /// The first token of the expression
+    pub token: Token,
+    /// The expression value
     pub expr: ExprData,
 }

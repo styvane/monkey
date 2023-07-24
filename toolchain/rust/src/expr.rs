@@ -9,4 +9,5 @@ pub struct Expr;
 pub enum ExprData {
     VariableDecl(Expr, String),
     Return(Expr, String),
+    ExprStatement(Expr, String),
 }
