@@ -134,6 +134,15 @@ where
     }
 }
 
+/// `PrattParser` specifies the mechanism for parsing a token type
+/// using PRATTER PARSER.
+pub trait PrattParser {
+    /// Parse token if its found in the prefix position.
+    fn prefix_parse() -> ExprData;
+    /// Parse a token if its found in an infix position.
+    fn infix_parse(ast: ExprData) -> ExprData;
+}
+
 #[cfg(test)]
 mod tests {
     use crate::ast::Statement;
