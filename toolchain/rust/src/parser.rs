@@ -2,12 +2,16 @@
 //!
 //! This module implement the parser for the language.
 
+mod ops;
+
 use crate::ast::syntax::*;
 use crate::ast::{Program, Statement};
 use crate::error::Error;
-use crate::expr::{Expr, ExprData};
+use crate::expr::ExprData;
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenKind};
+
+use self::ops::Precedence;
 
 /// Parser type.
 #[derive(Debug)]
@@ -100,7 +104,7 @@ where
         match token.kind {
             TokenKind::Let => self.parse_var_decl(),
             TokenKind::Return => self.parse_return_statement(),
-            _ => None,
+            _ => self.parse_expr_statement(),
         }
     }
 
@@ -115,10 +119,22 @@ where
         let stmt = Statement::Var(LocalVarDecl {
             token,
             name,
-            expr: ExprData::VariableDecl(Expr, "".into()),
+            expr: ExprData::VariableDecl(String::new()),
         });
 
         Some(stmt)
+    }
+
+    fn parse_expr_statement(&self) -> Option<Statement> {
+        let stmt = ExprStatement {
+            token: self.current_token.clone().take()?,
+            expr: self.parse_expr(Precedence::Lower),
+        };
+        Some(Statement::Expr(stmt))
+    }
+
+    fn parse_expr(&self, precedence: Precedence) -> ExprData {
+        todo!()
     }
 
     fn parse_return_statement(&mut self) -> Option<Statement> {
@@ -128,7 +144,7 @@ where
         }
         let stmt = Statement::Return(ReturnStatement {
             token,
-            expr: ExprData::Return(Expr, "".into()),
+            expr: ExprData::Return(String::new()),
         });
         Some(stmt)
     }
@@ -143,11 +159,24 @@ pub trait PrattParser {
     fn infix_parse(ast: ExprData) -> ExprData;
 }
 
+impl PrattParser for TokenKind {
+    fn prefix_parse() -> ExprData {
+        todo!()
+    }
+
+    fn infix_parse(ast: ExprData) -> ExprData {
+        todo!()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::ast::syntax::ExprStatement;
     use crate::ast::Statement;
     use crate::error::Error;
+    use crate::expr::ExprData;
     use crate::lexer::Lexer;
+    use crate::token::{TokenKind, TokenValue};
 
     use super::Parser;
 
@@ -208,5 +237,36 @@ return 999999;
         for stmt in &program.statements {
             assert!(matches!(stmt, Statement::Return(_)))
         }
+    }
+
+    #[test]
+    fn parse_identifier_expr() {
+        let input = "foobar;";
+        let lexer = Lexer::from_text(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse();
+        check_parser_errors(&parser.errors);
+
+        assert_eq!(
+            1,
+            program.statements.len(),
+            "program has not enough statements",
+        );
+
+        let (token, expr) = match &program.statements[0] {
+            Statement::Expr(ExprStatement {
+                token,
+                expr: ExprData::ExprStatement(expr),
+                ..
+            }) => (token, expr),
+            _ => panic!(
+                "expected expression statement found {:?}",
+                &program.statements[0]
+            ),
+        };
+
+        assert_eq!(TokenKind::Ident, token.kind);
+        assert_eq!(expr, "foobar");
+        assert_eq!(token.value, TokenValue::Word("foobar".into()));
     }
 }
