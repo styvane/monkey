@@ -25,6 +25,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.nextToken()
 	p.nextToken()
 
+	p.prefixParseFns = make(map[token.Kind]prefixParseFn)
+	p.registerPrefixFn(token.IDENT, p.parseIdentifier)
 	return p
 }
 
@@ -58,12 +60,12 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.ParseReturnStatement()
 	default:
-		return nil
+		return p.ParseExpressionStatement()
 	}
 }
 
 // parseVariableDecl parses a variable declaration statement.
-func (p *Parser) parseVariableDecl() ast.Statement {
+func (p *Parser) parseVariableDecl() *ast.LocalVariableDecl {
 	stmt := &ast.LocalVariableDecl{Token: p.currentToken}
 
 	if !p.expectedLookaheadToken(token.IDENT) {
@@ -108,7 +110,7 @@ func (p *Parser) Errors() []ParseError {
 	return p.errors
 }
 
-func (p *Parser) ParseReturnStatement() ast.Statement {
+func (p *Parser) ParseReturnStatement() *ast.ReturnStatement {
 	stmt := &ast.ReturnStatement{Token: p.currentToken}
 
 	p.nextToken()
@@ -134,4 +136,29 @@ func (p *Parser) registerPrefixFn(kind token.Kind, fn prefixParseFn) {
 
 func (p *Parser) registerInfixFn(kind token.Kind, fn infixParseFn) {
 	p.infixParseFns[kind] = fn
+}
+
+func (p *Parser) ParseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.currentToken}
+
+	stmt.Expr = p.parseExpression(LOWEST)
+
+	if p.lookaheadTokenIs(token.SEMI) {
+		p.nextToken()
+	}
+	return stmt
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.currentToken.Kind]
+	if prefix == nil {
+		return nil
+	}
+
+	leftExpr := prefix()
+	return leftExpr
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
 }
